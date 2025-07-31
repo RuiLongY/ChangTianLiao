@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>畅天聊</title>
+    <style>
+        :root {
+            --primary-color: #238636;
+            --secondary-color: #2d333b;
+            --background-color: #22272e;
+            --text-color: #adbac7;
+            --border-color: #444c56;
+            --message-bg: #2d333b;
+            --sent-message-bg: #347d39;
+            --channel-bg: #373e47;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #app-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        header {
+            background-color: var(--secondary-color);
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: #539bf5;
+        }
+        
+        #user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        #current-user {
+            font-weight: bold;
+        }
+        
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        
+        button:hover {
+            background-color: #46954a;
+        }
+        
+        #chat-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        #sidebar {
+            width: 250px;
+            background-color: var(--secondary-color);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #channel-list {
+            padding: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .channel {
+            padding: 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .channel:hover {
+            background-color: rgba(99, 110, 123, 0.4);
+        }
+        
+        .channel.active {
+            background-color: var(--channel-bg);
+        }
+        
+        #channel-list .channel.public {
+            background-color: var(--channel-bg);
+            font-weight: bold;
+        }
+        
+        #user-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+        
+        .user {
+            padding: 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .user:hover {
+            background-color: rgba(99, 110, 123, 0.4);
+        }
+        
+        .user.active {
+            background-color: rgba(99, 110, 123, 0.7);
+        }
+        
+        #chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #chat-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: bold;
+            background-color: var(--secondary-color);
+        }
+        
+        #messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .message {
+            max-width: 70%;
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            word-break: break-word;
+        }
+        
+        .received {
+            align-self: flex-start;
+            background-color: var(--message-bg);
+            border-bottom-left-radius: 0;
+        }
+        
+        .sent {
+            align-self: flex-end;
+            background-color: var(--sent-message-bg);
+            border-bottom-right-radius: 0;
+        }
+        
+        .message-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.25rem;
+            font-size: 0.85rem;
+        }
+        
+        .message-sender {
+            font-weight: 600;
+        }
+        
+        .message-time {
+            color: #768390;
+        }
+        
+        #input-area {
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        #message-input {
+            flex: 1;
+            padding: 0.75rem;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            resize: none;
+            min-height: 50px;
+            max-height: 150px;
+        }
+        
+        #auth-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        .modal-content {
+            background-color: var(--secondary-color);
+            padding: 2rem;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .modal-title {
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        
+        .input-group {
+            margin-bottom: 1rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+        
+        .modal-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1.5rem;
+        }
+        
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .auth-tab {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .auth-tab.active {
+            border-bottom-color: var(--primary-color);
+            font-weight: 600;
+        }
+        
+        .auth-form {
+            display: none;
+        }
+        
+        .auth-form.active {
+            display: block;
+        }
+        
+        @media (max-width: 768px) {
+            #chat-container {
+                flex-direction: column;
+            }
+            
+            #sidebar {
+                width: 100%;
+                height: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app-container">
+        <header>
+            <h1>畅天聊</h1>
+            <div id="user-info">
+                <span id="current-user">未登录</span>
+                <button id="logout-btn">退出</button>
+            </div>
+        </header>
+        
+        <div id="chat-container">
+            <div id="sidebar">
+                <div id="channel-list">
+                    <div class="channel public active" data-cid="1000000">公开频道</div>
+                    <!-- 群聊列表将在这里动态生成 -->
+                </div>
+                <div id="user-list">
+                    <!-- 用户列表将在这里动态生成 -->
+                </div>
+            </div>
+            
+            <div id="chat-area">
+                <div id="chat-header">公开频道</div>
+                <div id="messages">
+                    <!-- 消息将在这里动态生成 -->
+                </div>
+                
+                <div id="input-area">
+                    <textarea id="message-input" placeholder="输入消息..." rows="1"></textarea>
+                    <button id="send-btn">发送</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="auth-modal">
+        <div class="modal-content">
+            <h2 class="modal-title">畅天聊</h2>
+            
+            <div class="auth-tabs">
+                <div class="auth-tab active" data-tab="login">登录</div>
+                <div class="auth-tab" data-tab="register">注册</div>
+            </div>
+            
+            <div id="login-form" class="auth-form active">
+                <div class="input-group">
+                    <label for="login-username">用户名</label>
+                    <input type="text" id="login-username" placeholder="输入用户名">
+                </div>
+                <div class="input-group">
+                    <label for="login-password">密码</label>
+                    <input type="password" id="login-password" placeholder="输入密码">
+                </div>
+                <div class="modal-actions">
+                    <button id="login-btn">登录</button>
+                </div>
+            </div>
+            
+            <div id="register-form" class="auth-form">
+                <div class="input-group">
+                    <label for="register-username">用户名</label>
+                    <input type="text" id="register-username" placeholder="输入用户名">
+                </div>
+                <div class="input-group">
+                    <label for="register-password">密码</label>
+                    <input type="password" id="register-password" placeholder="输入密码">
+                </div>
+                <div class="input-group">
+                    <label for="register-confirm">确认密码</label>
+                    <input type="password" id="register-confirm" placeholder="再次输入密码">
+                </div>
+                <div class="modal-actions">
+                    <button id="register-btn">注册</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 配置
+        const config = {
+            owner: 'RuiLongY',
+            repo: 'ChangTianLiao',
+            branch: 'main',
+            accountsFile: 'accounts.json',
+            messagesFile: 'messages.json',
+            channelsFile: 'channels.json',
+            publicChannelCID: '1000000',
+            refreshInterval: 3000 // 3秒刷新一次
+        };
+        
+        // 安全编码函数
+        function utf8ToBase64(str) {
+            return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, 
+                function toSolidBytes(match, p1) {
+                    return String.fromCharCode('0x' + p1);
+                }));
+        }
+        
+        // 安全解码函数
+        function base64ToUtf8(str) {
+            return decodeURIComponent(atob(str).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+        }
+        
+        // 应用状态
+        let currentUser = null;
+        let users = [];
+        let channels = [];
+        let messages = [];
+        let selectedCID = config.publicChannelCID; // 默认选中公开频道
+        let selectedType = 'channel'; // 'channel' 或 'user'
+        let refreshIntervalId = null;
+        
+        // DOM元素
+        const authModal = document.getElementById('auth-modal');
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const loginUsername = document.getElementById('login-username');
+        const loginPassword = document.getElementById('login-password');
+        const registerUsername = document.getElementById('register-username');
+        const registerPassword = document.getElementById('register-password');
+        const registerConfirm = document.getElementById('register-confirm');
+        const loginBtn = document.getElementById('login-btn');
+        const registerBtn = document.getElementById('register-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const currentUserSpan = document.getElementById('current-user');
+        const userList = document.getElementById('user-list');
+        const channelList = document.getElementById('channel-list');
+        const chatHeader = document.getElementById('chat-header');
+        const messagesContainer = document.getElementById('messages');
+        const messageInput = document.getElementById('message-input');
+        const sendBtn = document.getElementById('send-btn');
+        const authTabs = document.querySelectorAll('.auth-tab');
+        const publicChannel = document.querySelector('.channel.public');
+        
+        // 初始化
+        function init() {
+            // 检查本地存储中是否有登录信息
+            const savedUser = localStorage.getItem('current-user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    currentUserSpan.textContent = currentUser.username;
+                    authModal.style.display = 'none';
+                    startRefreshing();
+                } catch (e) {
+                    localStorage.removeItem('current-user');
+                }
+            }
+            
+            // 设置事件监听
+            setupEventListeners();
+        }
+        
+        // 设置事件监听
+        function setupEventListeners() {
+            // 登录/注册标签切换
+            authTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    authTabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    loginForm.classList.remove('active');
+                    registerForm.classList.remove('active');
+                    
+                    if (tab.dataset.tab === 'login') {
+                        loginForm.classList.add('active');
+                    } else {
+                        registerForm.classList.add('active');
+                    }
+                });
+            });
+            
+            // 登录按钮
+            loginBtn.addEventListener('click', login);
+            
+            // 注册按钮
+            registerBtn.addEventListener('click', register);
+            
+            // 退出按钮
+            logoutBtn.addEventListener('click', logout);
+            
+            // 发送消息按钮
+            sendBtn.addEventListener('click', sendMessage);
+            
+            // 输入框回车发送
+            messageInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+            
+            // 自动调整输入框高度
+            messageInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight > 150 ? 150 : this.scrollHeight) + 'px';
+            });
+            
+            // 公开频道点击
+            publicChannel.addEventListener('click', () => {
+                selectChannel(config.publicChannelCID, '公开频道');
+            });
+        }
+        
+        // 登录
+        async function login() {
+            const username = loginUsername.value.trim();
+            const password = loginPassword.value.trim();
+            
+            if (!username || !password) {
+                alert('请输入用户名和密码');
+                return;
+            }
+            
+            try {
+                // 获取账户数据
+                const accounts = await getAccounts();
+                
+                // 验证账户
+                const user = accounts.find(u => u.username === username && u.password === password);
+                
+                if (!user) {
+                    throw new Error('用户名或密码错误');
+                }
+                
+                // 设置当前用户
+                currentUser = {
+                    cid: user.cid,
+                    username: user.username
+                };
+                
+                // 保存登录状态
+                localStorage.setItem('current-user', JSON.stringify(currentUser));
+                currentUserSpan.textContent = currentUser.username;
+                authModal.style.display = 'none';
+                
+                // 清空输入框
+                loginUsername.value = '';
+                loginPassword.value = '';
+                
+                // 开始刷新消息
+                startRefreshing();
+            } catch (error) {
+                alert('登录失败: ' + error.message);
+                console.error(error);
+            }
+        }
+        
+        // 注册
+        async function register() {
+            const username = registerUsername.value.trim();
+            const password = registerPassword.value.trim();
+            const confirm = registerConfirm.value.trim();
+            
+            if (!username || !password) {
+                alert('请输入用户名和密码');
+                return;
+            }
+            
+            if (password !== confirm) {
+                alert('两次输入的密码不一致');
+                return;
+            }
+            
+            try {
+                // 获取现有账户
+                const accounts = await getAccounts();
+                
+                // 检查用户名是否已存在
+                if (accounts.some(u => u.username === username)) {
+                    throw new Error('用户名已存在');
+                }
+                
+                // 创建新用户
+                const newUser = {
+                    cid: generateCID(6),
+                    username: username,
+                    password: password
+                };
+                
+                // 添加到账户列表
+                accounts.push(newUser);
+                
+                // 保存账户数据
+                await saveAccounts(accounts);
+                
+                alert('注册成功，请登录');
+                
+                // 切换到登录标签
+                authTabs.forEach(t => t.classList.remove('active'));
+                document.querySelector('.auth-tab[data-tab="login"]').classList.add('active');
+                registerForm.classList.remove('active');
+                loginForm.classList.add('active');
+                
+                // 清空输入框
+                registerUsername.value = '';
+                registerPassword.value = '';
+                registerConfirm.value = '';
+            } catch (error) {
+                alert('注册失败: ' + error.message);
+                console.error(error);
+            }
+        }
+        
+        // 退出
+        function logout() {
+            clearInterval(refreshIntervalId);
+            localStorage.removeItem('current-user');
+            currentUser = null;
+            currentUserSpan.textContent = '未登录';
+            authModal.style.display = 'flex';
+            messages = [];
+            users = [];
+            channels = [];
+            renderMessages();
+            renderUserList();
+            renderChannelList();
+        }
+        
+        // 开始定期刷新
+        function startRefreshing() {
+            loadData();
+            refreshIntervalId = setInterval(loadData, config.refreshInterval);
+        }
+        
+        // 加载所有数据
+        async function loadData() {
+            try {
+                await Promise.all([
+                    loadAccounts(),
+                    loadChannels(),
+                    loadMessages()
+                ]);
+                
+                updateUsersList();
+                renderUserList();
+                renderChannelList();
+                renderMessages();
+            } catch (error) {
+                console.error('加载数据失败:', error);
+            }
+        }
+        
+        // 获取账户数据
+        async function loadAccounts() {
+            try {
+                const response = await fetch(
+                    `https://api.github.com/repos/${config.owner}/${config.repo}/contents/${config.accountsFile}?ref=${config.branch}`,
+                    {
+                        headers: {
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    }
+                );
+                
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        return [];
+                    }
+                    throw new Error('获取账户数据失败');
+                }
+                
+                const data = await response.json();
+                return JSON.parse(base64ToUtf8(data.content));
+            } catch (error) {
+                console.error('获取账户失败:', error);
+                return [];
+            }
+        }
+        
+        // 保存账户数据
+        async function saveAccounts(accounts) {
+            try {
+                // 尝试获取现有文件SHA
+                let sha = null;
+                try {
+                    const fileInfo = await fetch(
+                        `https://api.github.com/repos/${config.owner}/${config.repo}/contents/${config.accountsFile}?ref=${config.branch}`,
+                        {
+                            headers: {
+                                'Accept': 'application/vnd.github.v3+json'
+                            }
+                        }
+                    );
+                    
+                    if (fileInfo.ok) {
+                        const fileData = await fileInfo.json();
+                        sha = fileData.sha;
+                    }
+                } catch (e) {
+                    // 文件不存在，sha保持null
+                }
+                
+                // 更新或创建文件
+                const response = await fetch(
+                    `https://api.github.com/repos/${config.owner}/${config.repo}/contents/${config.accountsFile}`,
+                    {
+                        method: 'PUT',
+                        headers: {
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            message: '更新账户数据',
+                            content: utf8ToBase64(JSON.stringify(accounts, null, 2)),
+                            sha: sha,
+                            branch: config.branch
+                        })
+                    }
+                );
+                
+                if (!response.ok) {
+                    throw new Error('保存账户数据失败');
+                }
+            } catch (error) {
+                console.error('保存账户失败:', error);
+                throw error;
+            }
+        }
+        
+        // 获取频道数据
+        async function loadChannels() {
+            try {
+                const response = await fetch(
+                    `https://api.github.com/repos/${config.owner}/${config.repo}/contents/${config.channelsFile}?ref=${config.branch}`,
+                    {
+                        headers: {
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    }
+                );
+                
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        return [];
+                    }
+                    throw new Error('获取频道数据失败');
+                }
+                
+                const data = await response.json();
+                return JSON.parse(base64ToUtf8(data.content));
+            } catch (error) {
+                console.error('获取频道失败:', error);
+                return [];
+            }
+        }
+        
+        // 保存频道数据
+        async function saveChannels(channelsToSave) {
+            try {
+                // 尝试获取现有文件SHA
+                let sha = null;
+                try {
+                    const fileInfo = await fetch(
+                        `https://api.github.com/repos/${config.owner}/${config.repo}/contents/${config.channelsFile}?ref=${config.branch}`,
+                        {
+                            headers: {
+                                'Accept': 'application/vnd.github.v3+json'
+                            }
+                        }
+                    );
+                    
+                    if (fileInfo.ok) {
+                        const fileData = await fileInfo.json();
+                        sha = fileData.sha;
+                    }
+                } catch (e) {
+                    // 文件不存在，sha保持null
+                }
+                
+                // 更新或创建文件
+                const response = await fetch(
+                    `https://api.github.com/repos/${config.owner}/${config.repo}/contents/${config.channelsFile}`,
+                    {
+                        method: 'PUT',
+                        headers: {
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            message: '更新频道数据',
+                            content: utf8ToBase64(JSON.stringify(channelsToSave, null, 2)),
+                            sha: sha,
+                            branch: config.branch
+                        })
+                    }
+                );
+                
+                if (!response.ok) {
+                    throw new Error('保存频道数据失败');
+                }
+            } catch (error) {
+                console.error('保存频道失败:', error);
+                throw error;
+            }
+        }
+        
+        // 加载消息
+        async function loadMessages() {
+            try {
+                const response = await fetch(
+                    `https://api.github.com/repos/${config.owner}/${config.repo}/contents/${config.messagesFile}?ref=${config.branch}`,
+                    {
+                        headers: {
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    }
+                );
+                
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        await createMessagesFile();
+                        return [];
+                    }
+                    throw new Error(`获取消息失败: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                return JSON.parse(base64ToUtf8(data.content));
+            } catch (error) {
+                console.error('加载消息失败:', error);
+                return [];
+            }
+        }
+        
+        // 创建消息文件
+        async function createMessagesFile() {
+            try {
+                const response = await fetch(
+                    `https://api.github.com/repos/${config.owner}/${config.repo}/contents/${config.messagesFile}`,
+                    {
+                        method: 'PUT',
+                        headers: {
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            message: '初始化消息文件',
+                            content: utf8ToBase64(JSON.stringify([])),
+                            branch: config.branch
+                        })
+                    }
+                );
+                
+                if (!response.ok) {
+                    throw new Error('创建消息文件失败');
+                }
+            } catch (error) {
+                console.error('创建消息文件失败:', error);
+            }
+        }
+        
+        // 保存消息
+        async function saveMessages(messagesToSave) {
+            try {
+                // 获取当前文件SHA
+                const fileInfo = await fetch(
+                    `https://api.github.com/repos/${config.owner}/${config.repo}/contents/${config.messagesFile}?ref=${config.branch}`,
+                    {
+                        headers: {
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    }
+                );
+                
+                if (!fileInfo.ok) {
+                    throw new Error('获取消息文件信息失败');
+                }
+                
+                const fileData = await fileInfo.json();
+                
+                // 更新文件
+                const response = await fetch(
+                    `https://api.github.com/repos/${config.owner}/${config.repo}/contents/${config.messagesFile}`,
+                    {
+                        method: 'PUT',
+                        headers: {
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            message: `消息更新 - ${new Date().toLocaleString()}`,
+                            content: utf8ToBase64(JSON.stringify(messagesToSave, null, 2)),
+                            sha: fileData.sha,
+                            branch: config.branch
+                        })
+                    }
+                );
+                
+                if (!response.ok) {
+                    throw new Error('保存消息失败');
+                }
+            } catch (error) {
+                console.error('保存消息失败:', error);
+                throw error;
+            }
+        }
+        
+        // 更新用户列表
+        async function updateUsersList() {
+            const accounts = await loadAccounts();
+            users = accounts.filter(account => account.cid !== currentUser?.cid);
+        }
+        
+        // 渲染用户列表
+        function renderUserList() {
+            userList.innerHTML = '';
+            
+            users.forEach(user => {
+                const userEl = document.createElement('div');
+                userEl.className = `user ${selectedType === 'user' && selectedCID === user.cid ? 'active' : ''}`;
+                userEl.textContent = user.username;
+                userEl.dataset.cid = user.cid;
+                
+                userEl.addEventListener('click', () => {
+                    selectUser(user.cid, user.username);
+                });
+                
+                userList.appendChild(userEl);
+            });
+        }
+        
+        // 渲染频道列表
+        function renderChannelList() {
+            // 清空频道列表（保留公开频道）
+            const channelsToRender = channels.filter(c => c.cid !== config.publicChannelCID);
+            
+            channelsToRender.forEach(channel => {
+                const existingChannel = document.querySelector(`.channel[data-cid="${channel.cid}"]`);
+                if (!existingChannel) {
+                    const channelEl = document.createElement('div');
+                    channelEl.className = `channel ${selectedType === 'channel' && selectedCID === channel.cid ? 'active' : ''}`;
+                    channelEl.textContent = channel.name;
+                    channelEl.dataset.cid = channel.cid;
+                    
+                    channelEl.addEventListener('click', () => {
+                        selectChannel(channel.cid, channel.name);
+                    });
+                    
+                    channelList.appendChild(channelEl);
+                }
+            });
+        }
+        
+        // 选择用户
+        async function selectUser(cid, username) {
+            selectedCID = cid;
+            selectedType = 'user';
+            chatHeader.textContent = `与 ${username} 的私聊`;
+            
+            // 更新UI状态
+            updateSelectionUI();
+            
+            // 加载消息
+            messages = await loadMessages();
+            renderMessages();
+        }
+        
+        // 选择频道
+        async function selectChannel(cid, name) {
+            selectedCID = cid;
+            selectedType = 'channel';
+            chatHeader.textContent = name;
+            
+            // 更新UI状态
+            updateSelectionUI();
+            
+            // 加载消息
+            messages = await loadMessages();
+            renderMessages();
+        }
+        
+        // 更新选择UI状态
+        function updateSelectionUI() {
+            // 更新频道选中状态
+            document.querySelectorAll('.channel').forEach(el => {
+                el.classList.remove('active');
+                if (el.dataset.cid === selectedCID && selectedType === 'channel') {
+                    el.classList.add('active');
+                }
+            });
+            
+            // 更新用户选中状态
+            document.querySelectorAll('.user').forEach(el => {
+                el.classList.remove('active');
+                if (el.dataset.cid === selectedCID && selectedType === 'user') {
+                    el.classList.add('active');
+                }
+            });
+        }
+        
+        // 渲染消息
+        function renderMessages() {
+            messagesContainer.innerHTML = '';
+            
+            if (messages.length === 0) {
+                messagesContainer.innerHTML = '<div style="text-align: center; margin-top: 50%; color: #768390;">没有消息</div>';
+                return;
+            }
+            
+            // 过滤出当前会话的消息
+            const filteredMessages = messages.filter(msg => {
+                if (selectedType === 'channel') {
+                    // 频道消息：接收者是当前频道CID
+                    return msg.receiver === selectedCID;
+                } else {
+                    // 私聊消息：发送者或接收者是当前用户CID
+                    return (msg.sender === currentUser.cid && msg.receiver === selectedCID) ||
+                           (msg.sender === selectedCID && msg.receiver === currentUser.cid);
+                }
+            });
+            
+            if (filteredMessages.length === 0) {
+                messagesContainer.innerHTML = '<div style="text-align: center; margin-top: 50%; color: #768390;">没有消息</div>';
+                return;
+            }
+            
+            filteredMessages.forEach(msg => {
+                const isSent = msg.sender === currentUser.cid;
+                const sender = users.find(u => u.cid === msg.sender) || 
+                              (msg.sender === currentUser.cid ? currentUser : { username: '未知用户' });
+                
+                const messageEl = document.createElement('div');
+                messageEl.className = `message ${isSent ? 'sent' : 'received'}`;
+                
+                messageEl.innerHTML = `
+                    <div class="message-info">
+                        <span class="message-sender">${sender.username}</span>
+                        <span class="message-time">${formatTime(msg.timestamp)}</span>
+                    </div>
+                    <div>${msg.content}</div>
+                `;
+                
+                messagesContainer.appendChild(messageEl);
+            });
+            
+            // 滚动到底部
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        // 发送消息
+        async function sendMessage() {
+            const content = messageInput.value.trim();
+            
+            if (!content || !selectedCID) {
+                return;
+            }
+            
+            const newMessage = {
+                id: generateId(),
+                sender: currentUser.cid,
+                receiver: selectedCID,
+                content: content,
+                timestamp: Date.now()
+            };
+            
+            // 添加到本地消息数组
+            messages.push(newMessage);
+            renderMessages();
+            
+            // 清空输入框
+            messageInput.value = '';
+            messageInput.style.height = 'auto';
+            
+            try {
+                // 保存消息
+                await saveMessages(messages);
+            } catch (error) {
+                console.error('发送消息失败:', error);
+                alert('发送消息失败: ' + error.message);
+                
+                // 如果失败，移除刚才添加的消息
+                messages.pop();
+                renderMessages();
+            }
+        }
+        
+        // 生成CID (6位用户CID或7位频道CID)
+        function generateCID(length) {
+            const chars = '0123456789';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+        
+        // 生成消息ID
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+        
+        // 格式化时间
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            return `${date.getFullYear()}/${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
+        }
+        
+        // 启动应用
+        init();
+    </script>
+</body>
+</html>
